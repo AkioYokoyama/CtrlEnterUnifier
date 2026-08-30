@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ctrl+Enter Unifier</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="w-80 p-4 font-sans text-sm text-gray-800">
+    <h1 class="text-base font-semibold mb-3">Ctrl+Enter Unifier</h1>
+
+    <label class="flex items-center gap-2 mb-2 cursor-pointer">
+      <input type="checkbox" id="enabled" class="accent-blue-600" />
+      <span>拡張機能を有効にする</span>
+    </label>
+
+    <label class="flex items-center gap-2 mb-3 cursor-pointer">
+      <input type="checkbox" id="disableHost" class="accent-blue-600" />
+      <span>このサイト (<span id="hostName" class="font-semibold"></span>) では無効化</span>
+    </label>
+
+    <hr class="border-gray-200 my-3" />
+
+    <p class="text-xs text-gray-500 leading-relaxed mb-2">
+      Ctrl+Enterで送信が効かないサイトがある場合、送信ボタンのCSSセレクタを登録すると確実に動作します（開発者ツールでボタンを右クリック→検証→Copy selector）。
+    </p>
+
+    <input
+      type="text"
+      id="selectorInput"
+      placeholder="例: button[data-testid='send-button']"
+      class="w-full box-border px-2 py-1 mb-2 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+    />
+    <button
+      id="addSelector"
+      class="px-3 py-1 border border-gray-300 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+    >
+      このサイト用に登録
+    </button>
+    <div id="status" class="text-xs text-emerald-600 h-4 mt-1"></div>
+
+    <div id="selectorList" class="max-h-28 overflow-y-auto mt-2"></div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
