@@ -71,6 +71,58 @@ function tryClickSendButton(): boolean {
   return false;
 }
 
+const SEND_TEXT_RE = /send|送信/i;
+
+/**
+ * カーソル位置の入力欄付近から「送信ボタンらしき要素」を自動探索する。
+ * Gemini など、合成KeyboardEventを無視するAngular/React実装向けのフォールバック。
+ * aria-label / data-testid / テキスト / アイコン名に "send" 系の語を含む
+ * 有効なボタンを、DOM上で近いコンテナから優先的に探す。
+ */
+function findLikelySendButton(target: HTMLElement): HTMLButtonElement | null {
+  let container: HTMLElement | null = target;
+
+  for (let depth = 0; depth < 8 && container; depth++) {
+    const candidates = container.querySelectorAll<HTMLButtonElement>(
+      'button, [role="button"]'
+    );
+
+    for (const btn of candidates) {
+      if ((btn as HTMLButtonElement).disabled) continue;
+      if (btn.getAttribute("aria-disabled") === "true") continue;
+
+      const aria = btn.getAttribute("aria-label") || "";
+      const testId = btn.getAttribute("data-testid") || btn.getAttribute("data-test-id") || "";
+      const text = btn.textContent?.trim() || "";
+      const iconEl = btn.querySelector("mat-icon, i, [class*='icon']");
+      const iconText = iconEl?.textContent?.trim() || "";
+
+      if (
+        SEND_TEXT_RE.test(aria) ||
+        SEND_TEXT_RE.test(testId) ||
+        SEND_TEXT_RE.test(iconText) ||
+        text === "➤" ||
+        text === "送信"
+      ) {
+        return btn;
+      }
+    }
+
+    container = container.parentElement;
+  }
+
+  return null;
+}
+
+function tryClickLikelySendButton(target: HTMLElement): boolean {
+  const btn = findLikelySendButton(target);
+  if (btn) {
+    btn.click();
+    return true;
+  }
+  return false;
+}
+
 function fireSyntheticEnter(target: HTMLElement): void {
   const opts: KeyboardEventInit = {
     key: "Enter",
@@ -113,6 +165,7 @@ function handleKeydown(e: KeyboardEvent): void {
   const target = e.target;
   if (!isEditableTarget(target)) return;
 
+  // Windows/Linux: Ctrl+Enter, Mac: Command(⌘)+Enter のどちらでも送信トリガーとして扱う
   const isSendCombo = e.ctrlKey || e.metaKey;
 
   if (isSendCombo) {
@@ -120,7 +173,8 @@ function handleKeydown(e: KeyboardEvent): void {
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    const clicked = tryClickSendButton();
+    // 優先順位: ① ユーザー登録セレクタ → ② 送信ボタンの自動検出 → ③ 合成Enterイベント
+    const clicked = tryClickSendButton() || tryClickLikelySendButton(target);
     if (!clicked) {
       fireSyntheticEnter(target);
     }
